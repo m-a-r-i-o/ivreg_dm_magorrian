@@ -1,11 +1,14 @@
 library('AER')
 d <- read.csv('BH-Sph-DM.csv')
-names(data)
+names(d)
 naive_OLS <- lm(log.M_BH.M_Sun. ~ log.M_sph.M_Sun., data=d)
-IV <- ivreg(log.M_BH.M_Sun. ~ log.M_sph.M_Sun. | log.M_DM.M_Sun., data=d, diagnostics=TRUE)
+IV <- ivreg(log.M_BH.M_Sun. ~ log.M_sph.M_Sun. | log.M_DM.M_Sun., data=d)
 
 summary(naive_OLS)
-summary(IV)
+summary(IV, diagnostics=TRUE)
+
+#is the instrument relevant?
+cor.test(d$log.M_sph.M_Sun., d$log.M_DM.M_Sun.)
 
 #Let's bootstrap within the error bars, shall we?
 
@@ -27,7 +30,7 @@ bootstrap_iv <- function(i)
     ivreg(y ~ x | z)$coefficients[2]
 }
 
-pdf("bootstrap.pdf")
+pdf("bootstrap_errors.pdf")
 plot(density(sapply(1:1000, bootstrap_ols)), xlim = c(0,5), xlab = "regression coefficient", ylab = "frequency", main = "")
 lines(density(sapply(1:1000, bootstrap_iv)), col = "#C44218")
 
@@ -37,6 +40,8 @@ summary(secondstage)
 
 pdf("naive_OLS.pdf")
 plot(d$log.M_sph.M_Sun., d$log.M_BH.M_Sun., ylab = expression(M[BH]), xlab = expression(M[bulge]), main = "Naive OLS regression", pch = 16)
+arrows(d$log.M_sph.M_Sun. - d$log.M_sph.M_Sun._std, d$log.M_BH.M_Sun., d$log.M_sph.M_Sun. + d$log.M_sph.M_Sun._std, d$log.M_BH.M_Sun., angle=90, length=0)
+arrows(d$log.M_sph.M_Sun., d$log.M_BH.M_Sun. - d$log.M_BH.M_Sun._std, d$log.M_sph.M_Sun., d$log.M_BH.M_Sun. + d$log.M_BH.M_Sun._std, angle=90, length=0)
 #abline(mean(d$log.M_BH.M_Sun.)-mean(d$log.M_sph.M_Sun.),1, col = "#A0A0A0")
 #abline(mean(d$log.M_BH.M_Sun.)-2*mean(d$log.M_sph.M_Sun.),2, col = "#C44218")
 abline(naive_OLS$coefficients)
@@ -48,4 +53,10 @@ plot(predicted_values, d$log.M_BH.M_Sun., ylab = expression(M[BH]), xlab = expre
 #abline(mean(d$log.M_BH.M_Sun.)-mean(predicted_values),1, col = "#A0A0A0")
 abline(naive_OLS$coefficients)
 abline(secondstage$coefficients, col = "#C44218")
+
+##is this worth getting into?
+#pdf("conditional_independence.pdf")
+#coplot(d$log.M_BH.M_Sun. ~ d$log.M_DM.M_Sun. | d$log.M_sph.M_Sun., number = 9, ylab = expression(M[BH]), xlab = expression(M[halo]), pch =16, col = "#888888")
+#summary(lm(d$log.M_BH.M_Sun. ~ d$log.M_DM.M_Sun. + d$log.M_sph.M_Sun.)) #coefficient of d$log.M_DM.M_Sun. should be insignificant
+
 

@@ -37,15 +37,12 @@ Registered S3 methods overwritten by 'AER':
   nobs.survreg    survival
   weights.survreg survival
 > d <- read.csv('BH-Sph-DM.csv')
-> names(data)
-NULL
+> names(d)
+[1] "Galaxy"               "log.M_BH.M_Sun."      "log.M_BH.M_Sun._std" 
+[4] "log.M_sph.M_Sun."     "log.M_sph.M_Sun._std" "log.M_DM.M_Sun."     
+[7] "log.M_DM.M_Sun._std" 
 > naive_OLS <- lm(log.M_BH.M_Sun. ~ log.M_sph.M_Sun., data=d)
-> IV <- ivreg(log.M_BH.M_Sun. ~ log.M_sph.M_Sun. | log.M_DM.M_Sun., data=d, diagnostics=TRUE)
-경고메시지(들): 
-1: In lm.fit(z, x, ...) :
- extra argument ‘diagnostics’ will be disregarded 
-2: In lm.fit(xz, y, offset = offset, ...) :
- extra argument ‘diagnostics’ will be disregarded 
+> IV <- ivreg(log.M_BH.M_Sun. ~ log.M_sph.M_Sun. | log.M_DM.M_Sun., data=d)
 > 
 > summary(naive_OLS)
 
@@ -67,11 +64,11 @@ Residual standard error: 0.524 on 33 degrees of freedom
 Multiple R-squared:  0.5088,	Adjusted R-squared:  0.4939 
 F-statistic: 34.18 on 1 and 33 DF,  p-value: 1.516e-06
 
-> summary(IV)
+> summary(IV, diagnostics=TRUE)
 
 Call:
 ivreg(formula = log.M_BH.M_Sun. ~ log.M_sph.M_Sun. | log.M_DM.M_Sun., 
-    data = d, diagnostics = TRUE)
+    data = d)
 
 Residuals:
       Min        1Q    Median        3Q       Max 
@@ -81,12 +78,33 @@ Coefficients:
                  Estimate Std. Error t value Pr(>|t|)    
 (Intercept)      -14.0488     4.0057  -3.507  0.00133 ** 
 log.M_sph.M_Sun.   2.1062     0.3946   5.338  6.8e-06 ***
+
+Diagnostic tests:
+                 df1 df2 statistic  p-value    
+Weak instruments   1  33     27.87 8.09e-06 ***
+Wu-Hausman         1  32     10.91  0.00236 ** 
+Sargan             0  NA        NA       NA    
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 Residual standard error: 0.5977 on 33 degrees of freedom
 Multiple R-Squared: 0.3609,	Adjusted R-squared: 0.3415 
 Wald test:  28.5 on 1 and 33 DF,  p-value: 6.802e-06 
+
+> 
+> #is the instrument relevant?
+> cor.test(d$log.M_sph.M_Sun., d$log.M_DM.M_Sun.)
+
+	Pearson's product-moment correlation
+
+data:  d$log.M_sph.M_Sun. and d$log.M_DM.M_Sun.
+t = 5.2793, df = 33, p-value = 8.093e-06
+alternative hypothesis: true correlation is not equal to 0
+95 percent confidence interval:
+ 0.4433935 0.8240793
+sample estimates:
+      cor 
+0.6766576 
 
 > 
 > #Let's bootstrap within the error bars, shall we?
@@ -109,7 +127,7 @@ Wald test:  28.5 on 1 and 33 DF,  p-value: 6.802e-06
 +     ivreg(y ~ x | z)$coefficients[2]
 + }
 > 
-> pdf("bootstrap.pdf")
+> pdf("bootstrap_errors.pdf")
 > plot(density(sapply(1:1000, bootstrap_ols)), xlim = c(0,5), xlab = "regression coefficient", ylab = "frequency", main = "")
 > lines(density(sapply(1:1000, bootstrap_iv)), col = "#C44218")
 > 
@@ -138,6 +156,8 @@ F-statistic: 40.64 on 1 and 33 DF,  p-value: 3.215e-07
 > 
 > pdf("naive_OLS.pdf")
 > plot(d$log.M_sph.M_Sun., d$log.M_BH.M_Sun., ylab = expression(M[BH]), xlab = expression(M[bulge]), main = "Naive OLS regression", pch = 16)
+> arrows(d$log.M_sph.M_Sun. - d$log.M_sph.M_Sun._std, d$log.M_BH.M_Sun., d$log.M_sph.M_Sun. + d$log.M_sph.M_Sun._std, d$log.M_BH.M_Sun., angle=90, length=0)
+> arrows(d$log.M_sph.M_Sun., d$log.M_BH.M_Sun. - d$log.M_BH.M_Sun._std, d$log.M_sph.M_Sun., d$log.M_BH.M_Sun. + d$log.M_BH.M_Sun._std, angle=90, length=0)
 > #abline(mean(d$log.M_BH.M_Sun.)-mean(d$log.M_sph.M_Sun.),1, col = "#A0A0A0")
 > #abline(mean(d$log.M_BH.M_Sun.)-2*mean(d$log.M_sph.M_Sun.),2, col = "#C44218")
 > abline(naive_OLS$coefficients)
@@ -150,7 +170,13 @@ F-statistic: 40.64 on 1 and 33 DF,  p-value: 3.215e-07
 > abline(naive_OLS$coefficients)
 > abline(secondstage$coefficients, col = "#C44218")
 > 
+> ##is this worth getting into?
+> #pdf("conditional_independence.pdf")
+> #coplot(d$log.M_BH.M_Sun. ~ d$log.M_DM.M_Sun. | d$log.M_sph.M_Sun., number = 9, ylab = expression(M[BH]), xlab = expression(M[halo]), pch =16, col = "#888888")
+> #summary(lm(d$log.M_BH.M_Sun. ~ d$log.M_DM.M_Sun. + d$log.M_sph.M_Sun.)) #coefficient of d$log.M_DM.M_Sun. should be insignificant
+> 
+> 
 > 
 > proc.time()
  사용자  시스템 elapsed 
-  6.000   0.230   6.273 
+  5.947   0.227   6.209 
