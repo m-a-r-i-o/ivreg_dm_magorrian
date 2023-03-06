@@ -36,14 +36,21 @@ Registered S3 methods overwritten by 'AER':
   fitted.survreg  survival
   nobs.survreg    survival
   weights.survreg survival
-> data <- read.csv('BH-Sph-DM.csv')
-> naive_OLS <- lm(log.M_BH.M_Sun. ~ log.M_sph.M_Sun., data=data)
-> IV <- ivreg(log.M_BH.M_Sun. ~ log.M_sph.M_Sun. | log.M_DM.M_Sun., data=data)
+> d <- read.csv('BH-Sph-DM.csv')
+> names(data)
+NULL
+> naive_OLS <- lm(log.M_BH.M_Sun. ~ log.M_sph.M_Sun., data=d)
+> IV <- ivreg(log.M_BH.M_Sun. ~ log.M_sph.M_Sun. | log.M_DM.M_Sun., data=d, diagnostics=TRUE)
+경고메시지(들): 
+1: In lm.fit(z, x, ...) :
+ extra argument ‘diagnostics’ will be disregarded 
+2: In lm.fit(xz, y, offset = offset, ...) :
+ extra argument ‘diagnostics’ will be disregarded 
 > 
 > summary(naive_OLS)
 
 Call:
-lm(formula = log.M_BH.M_Sun. ~ log.M_sph.M_Sun., data = data)
+lm(formula = log.M_BH.M_Sun. ~ log.M_sph.M_Sun., data = d)
 
 Residuals:
      Min       1Q   Median       3Q      Max 
@@ -64,7 +71,7 @@ F-statistic: 34.18 on 1 and 33 DF,  p-value: 1.516e-06
 
 Call:
 ivreg(formula = log.M_BH.M_Sun. ~ log.M_sph.M_Sun. | log.M_DM.M_Sun., 
-    data = data)
+    data = d, diagnostics = TRUE)
 
 Residuals:
       Min        1Q    Median        3Q       Max 
@@ -82,6 +89,29 @@ Multiple R-Squared: 0.3609,	Adjusted R-squared: 0.3415
 Wald test:  28.5 on 1 and 33 DF,  p-value: 6.802e-06 
 
 > 
+> #Let's bootstrap within the error bars, shall we?
+> 
+> set.seed(888)
+> 
+> bootstrap_ols <- function(i)
++ {
++     y <- d$log.M_BH.M_Sun. + rnorm(length(d$log.M_BH.M_Sun.))*d$log.M_BH.M_Sun._std
++     x <- d$log.M_sph.M_Sun. + rnorm(length(d$log.M_sph.M_Sun.))*d$log.M_sph.M_Sun._std
++     z <- d$log.M_DM.M_Sun. + rnorm(length(d$log.M_DM.M_Sun.))*d$log.M_DM.M_Sun._std
++     lm(y ~ x)$coefficients[2]
++ }
+> 
+> bootstrap_iv <- function(i)
++ {
++     y <- d$log.M_BH.M_Sun. + rnorm(length(d$log.M_BH.M_Sun.))*d$log.M_BH.M_Sun._std
++     x <- d$log.M_sph.M_Sun. + rnorm(length(d$log.M_sph.M_Sun.))*d$log.M_sph.M_Sun._std
++     z <- d$log.M_DM.M_Sun. + rnorm(length(d$log.M_DM.M_Sun.))*d$log.M_DM.M_Sun._std
++     ivreg(y ~ x | z)$coefficients[2]
++ }
+> 
+> plot(density(sapply(1:1000, bootstrap_ols)), xlim = c(0,5), xlab = "regression coefficient", ylab = "frequency", main = "")
+> lines(density(sapply(1:1000, bootstrap_iv)), col = "#C44218")
+> 
 > proc.time()
  사용자  시스템 elapsed 
-  1.650   0.149   1.797 
+  6.505   0.340   7.352 
