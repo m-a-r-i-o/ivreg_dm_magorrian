@@ -109,9 +109,48 @@ Wald test:  28.5 on 1 and 33 DF,  p-value: 6.802e-06
 +     ivreg(y ~ x | z)$coefficients[2]
 + }
 > 
+> pdf("bootstrap.pdf")
 > plot(density(sapply(1:1000, bootstrap_ols)), xlim = c(0,5), xlab = "regression coefficient", ylab = "frequency", main = "")
 > lines(density(sapply(1:1000, bootstrap_iv)), col = "#C44218")
 > 
+> predicted_values <- lm(d$log.M_sph.M_Sun. ~ d$log.M_DM.M_Sun.)$fitted.values
+> secondstage <- lm(d$log.M_BH.M_Sun. ~ predicted_values)
+> summary(secondstage)
+
+Call:
+lm(formula = d$log.M_BH.M_Sun. ~ predicted_values)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-0.96981 -0.35456  0.00662  0.27341  0.96204 
+
+Coefficients:
+                 Estimate Std. Error t value Pr(>|t|)    
+(Intercept)      -14.0488     3.3543  -4.188 0.000197 ***
+predicted_values   2.1062     0.3304   6.375 3.21e-07 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.5005 on 33 degrees of freedom
+Multiple R-squared:  0.5519,	Adjusted R-squared:  0.5383 
+F-statistic: 40.64 on 1 and 33 DF,  p-value: 3.215e-07
+
+> 
+> pdf("naive_OLS.pdf")
+> plot(d$log.M_sph.M_Sun., d$log.M_BH.M_Sun., ylab = expression(M[BH]), xlab = expression(M[bulge]), main = "Naive OLS regression", pch = 16)
+> #abline(mean(d$log.M_BH.M_Sun.)-mean(d$log.M_sph.M_Sun.),1, col = "#A0A0A0")
+> #abline(mean(d$log.M_BH.M_Sun.)-2*mean(d$log.M_sph.M_Sun.),2, col = "#C44218")
+> abline(naive_OLS$coefficients)
+> abline(secondstage$coefficients, col = "#C44218")
+> 
+> pdf("second_stage.pdf")
+> plot(predicted_values, d$log.M_BH.M_Sun., ylab = expression(M[BH]), xlab = expression("Predicted "*M[bulge]), main = "Second stage IV regression", pch = 16)
+> #abline(mean(d$log.M_BH.M_Sun.)-2*mean(predicted_values),2, col = "#C44218")
+> #abline(mean(d$log.M_BH.M_Sun.)-mean(predicted_values),1, col = "#A0A0A0")
+> abline(naive_OLS$coefficients)
+> abline(secondstage$coefficients, col = "#C44218")
+> 
+> 
 > proc.time()
  사용자  시스템 elapsed 
-  6.505   0.340   7.352 
+  6.000   0.230   6.273 
