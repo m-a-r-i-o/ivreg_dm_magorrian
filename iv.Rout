@@ -1,0 +1,87 @@
+
+R version 3.6.3 (2020-02-29) -- "Holding the Windsock"
+Copyright (C) 2020 The R Foundation for Statistical Computing
+Platform: x86_64-apple-darwin15.6.0 (64-bit)
+
+R è un software libero ed è rilasciato SENZA ALCUNA GARANZIA.
+Siamo ben lieti se potrai redistribuirlo, ma sotto certe condizioni.
+Scrivi 'license()' o 'licence()' per dettagli su come distribuirlo.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Scrivi 'demo()' per una dimostrazione, 'help()' per la guida in linea, o
+'help.start()' per l'help navigabile con browser HTML.
+Scrivi 'q()' per uscire da R.
+
+> library('AER')
+Carico il pacchetto richiesto: car
+Carico il pacchetto richiesto: carData
+Carico il pacchetto richiesto: lmtest
+Carico il pacchetto richiesto: zoo
+
+다음의 패키지를 부착합니다: ‘zoo’
+
+The following objects are masked from ‘package:base’:
+
+    as.Date, as.Date.numeric
+
+Carico il pacchetto richiesto: sandwich
+Carico il pacchetto richiesto: survival
+Registered S3 methods overwritten by 'AER':
+  method          from    
+  fitted.survreg  survival
+  nobs.survreg    survival
+  weights.survreg survival
+> data <- read.csv('BH-Sph-DM.csv')
+> naive_OLS <- lm(log.M_BH.M_Sun. ~ log.M_sph.M_Sun., data=data)
+> IV <- ivreg(log.M_BH.M_Sun. ~ log.M_sph.M_Sun. | log.M_DM.M_Sun., data=data)
+> 
+> summary(naive_OLS)
+
+Call:
+lm(formula = log.M_BH.M_Sun. ~ log.M_sph.M_Sun., data = data)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-0.82188 -0.38821 -0.02139  0.25286  1.17493 
+
+Coefficients:
+                 Estimate Std. Error t value Pr(>|t|)    
+(Intercept)       -6.5610     2.3772  -2.760  0.00936 ** 
+log.M_sph.M_Sun.   1.3684     0.2341   5.846 1.52e-06 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.524 on 33 degrees of freedom
+Multiple R-squared:  0.5088,	Adjusted R-squared:  0.4939 
+F-statistic: 34.18 on 1 and 33 DF,  p-value: 1.516e-06
+
+> summary(IV)
+
+Call:
+ivreg(formula = log.M_BH.M_Sun. ~ log.M_sph.M_Sun. | log.M_DM.M_Sun., 
+    data = data)
+
+Residuals:
+      Min        1Q    Median        3Q       Max 
+-1.110032 -0.397493 -0.007124  0.504891  1.521260 
+
+Coefficients:
+                 Estimate Std. Error t value Pr(>|t|)    
+(Intercept)      -14.0488     4.0057  -3.507  0.00133 ** 
+log.M_sph.M_Sun.   2.1062     0.3946   5.338  6.8e-06 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.5977 on 33 degrees of freedom
+Multiple R-Squared: 0.3609,	Adjusted R-squared: 0.3415 
+Wald test:  28.5 on 1 and 33 DF,  p-value: 6.802e-06 
+
+> 
+> proc.time()
+ 사용자  시스템 elapsed 
+  1.650   0.149   1.797 
